@@ -1,0 +1,20 @@
+name: test_draft_condition
+
+on:
+  pull_request:
+    types: [ ready_for_review, opened, synchronize, reopened ] # デフォルト types + ready_for_review(draft -> opend)
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  coverage-verify:
+    if: (github.event_name == 'pull_request' && '! github.event.pull_request.draft')
+    name: test draft condition
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Hello World
+      run: echo "Hello World!"
+    
