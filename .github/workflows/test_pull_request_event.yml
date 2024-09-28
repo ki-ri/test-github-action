@@ -3,8 +3,8 @@ name: test/pull-request
 on:
   pull_request:
     paths:
-      - 'README.md'
-      - 'wanwan.txt'
+      - 'README1.md'
+      - 'wanwan1.txt'
 
 jobs:
   pull-request:
