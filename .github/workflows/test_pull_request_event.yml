@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'README.md'
+      - 'wanwan.txt'
 
 jobs:
   pull-request:
