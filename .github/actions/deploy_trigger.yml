@@ -1,0 +1,27 @@
+name: "Deploy Trigger Common"
+description: "Common deployment actions for all environments"
+
+inputs:
+  environment:
+    description: "Deployment environment"
+    required: true
+  run_db_migration_hcs:
+    description: "Run HCS DB migration"
+    required: false
+    default: 'true'
+  run_db_migration_platform:
+    description: "Run Platform DB migration"
+    required: false
+    default: 'true'
+  run_db_migration_billing:
+    description: "Run Billing DB migration"
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Deploy Trigger Execution"
+      shell: bash
+      run: |
+        echo "actions/deploy_triggerが実行されました"
