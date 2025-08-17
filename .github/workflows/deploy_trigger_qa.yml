@@ -5,8 +5,8 @@ on:
   schedule:
     # 14:00 JST on 2nd and 4th Thursday of every month (5:00 UTC)
     # - cron: '0 5 * * 4'
-    # 15:00 JST on 2025-08-17 (6:00 UTC)
-    - cron: '0 6 17 8 *'
+    # 18:45 JST on 2025-08-17 (9:45 UTC)
+    - cron: '45 9 17 8 *'
 
 jobs:
   check-schedule:
@@ -73,6 +73,9 @@ jobs:
     needs: [notify-deployment-start, check-schedule]
     if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Deploy to qa
         uses: ./.github/actions/deploy_trigger.yml
         with:

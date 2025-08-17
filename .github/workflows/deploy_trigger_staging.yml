@@ -61,6 +61,9 @@ jobs:
     needs: [notify-deployment-start, check-schedule]
     if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Deploy to staging
         uses: ./.github/actions/deploy_trigger.yml
         with:
