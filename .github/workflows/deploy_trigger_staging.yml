@@ -1,0 +1,70 @@
+name: "Deploy Trigger - Staging"
+
+on:
+  schedule:
+    # 14:00 JST on 1st and 3rd Wednesday of every month (5:00 UTC)
+    - cron: '0 5 * * 3'
+
+jobs:
+  check-schedule:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if it's 1st or 3rd Wednesday
+        id: check
+        run: |
+          # Get current date in JST
+          current_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          current_day=$(TZ=Asia/Tokyo date +%d)
+          current_dow=$(TZ=Asia/Tokyo date +%u)  # 1=Monday, 3=Wednesday
+          
+          # Check if today is Wednesday
+          if [ "$current_dow" != "3" ]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Calculate which Wednesday of the month this is
+          first_day_of_month=$(TZ=Asia/Tokyo date -d "${current_date%%-*}-${current_date#*-}" +%u)
+          days_to_first_wednesday=$((3 - first_day_of_month))
+          if [ $days_to_first_wednesday -lt 0 ]; then
+            days_to_first_wednesday=$((days_to_first_wednesday + 7))
+          fi
+          first_wednesday=$((1 + days_to_first_wednesday))
+          
+          wednesday_number=$(((current_day - first_wednesday) / 7 + 1))
+          
+          # Check if it's 1st or 3rd Wednesday
+          if [ "$wednesday_number" = "1" ] || [ "$wednesday_number" = "3" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  notify-deployment-start:
+    runs-on: ubuntu-latest
+    needs: check-schedule
+    if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
+    steps:
+      - name: Notify Staging deployment start
+        uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 # v2.3.3
+        env:
+          SLACK_TITLE: 'Staging環境デプロイ開始予告'
+          SLACK_MESSAGE: 'これはSlack通知のテストです。Stagingのリリースを開始します。'
+          SLACK_ICON: https://emoji.slack-edge.com/T03RE03HC/kaipochi%25E6%25BA%2580%25E8%25B6%25B3/29ada9c6ddf89230.png
+          SLACK_WEBHOOK: ${{ vars.SLACK_DEPLOY_CHANNEL_WEBHOOK_URL }}
+
+  staging-deployment:
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: [notify-deployment-start, check-schedule]
+    if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
+    steps:
+      - name: Deploy to staging
+        uses: ./.github/actions/deploy_trigger.yml
+        with:
+          environment: staging
+          run_db_migration_hcs: 'true'
+          run_db_migration_platform: 'true'
+          run_db_migration_billing: 'true'
