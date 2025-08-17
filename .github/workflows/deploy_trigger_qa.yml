@@ -4,7 +4,9 @@ name: "Deploy Trigger - QA"
 on:
   schedule:
     # 14:00 JST on 2nd and 4th Thursday of every month (5:00 UTC)
-    - cron: '0 5 * * 4'
+    # - cron: '0 5 * * 4'
+    # 13:30 JST on 2025-08-17 (4:30 UTC)
+    - cron: '30 4 17 8 *'
 
 jobs:
   check-schedule:
