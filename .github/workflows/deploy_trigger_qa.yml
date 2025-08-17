@@ -14,36 +14,45 @@ jobs:
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
     steps:
-      - name: Check if it's 2nd or 4th Thursday
+      - name: Check if it's 2025-08-17
         id: check
         run: |
           # Get current date in JST
           current_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
-          current_day=$(TZ=Asia/Tokyo date +%d)
-          current_dow=$(TZ=Asia/Tokyo date +%u)  # 1=Monday, 4=Thursday
           
-          # Check if today is Thursday
-          if [ "$current_dow" != "4" ]; then
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Calculate which Thursday of the month this is
-          first_day_of_month=$(TZ=Asia/Tokyo date -d "${current_date%%-*}-${current_date#*-}" +%u)
-          days_to_first_thursday=$((4 - first_day_of_month))
-          if [ $days_to_first_thursday -lt 0 ]; then
-            days_to_first_thursday=$((days_to_first_thursday + 7))
-          fi
-          first_thursday=$((1 + days_to_first_thursday))
-          
-          thursday_number=$(((current_day - first_thursday) / 7 + 1))
-          
-          # Check if it's 2nd or 4th Thursday
-          if [ "$thursday_number" = "2" ] || [ "$thursday_number" = "4" ]; then
+          # Check if today is 2025-08-17
+          if [ "$current_date" = "2025-08-17" ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
+          
+          # Original logic (commented out for restoration)
+          # current_day=$(TZ=Asia/Tokyo date +%d)
+          # current_dow=$(TZ=Asia/Tokyo date +%u)  # 1=Monday, 4=Thursday
+          # 
+          # # Check if today is Thursday
+          # if [ "$current_dow" != "4" ]; then
+          #   echo "should_run=false" >> $GITHUB_OUTPUT
+          #   exit 0
+          # fi
+          # 
+          # # Calculate which Thursday of the month this is
+          # first_day_of_month=$(TZ=Asia/Tokyo date -d "${current_date%%-*}-${current_date#*-}" +%u)
+          # days_to_first_thursday=$((4 - first_day_of_month))
+          # if [ $days_to_first_thursday -lt 0 ]; then
+          #   days_to_first_thursday=$((days_to_first_thursday + 7))
+          # fi
+          # first_thursday=$((1 + days_to_first_thursday))
+          # 
+          # thursday_number=$(((current_day - first_thursday) / 7 + 1))
+          # 
+          # # Check if it's 2nd or 4th Thursday
+          # if [ "$thursday_number" = "2" ] || [ "$thursday_number" = "4" ]; then
+          #   echo "should_run=true" >> $GITHUB_OUTPUT
+          # else
+          #   echo "should_run=false" >> $GITHUB_OUTPUT
+          # fi
 
   notify-deployment-start:
     runs-on: ubuntu-latest
