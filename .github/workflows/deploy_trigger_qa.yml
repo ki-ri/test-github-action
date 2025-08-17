@@ -52,7 +52,7 @@ jobs:
         uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 # v2.3.3
         env:
           SLACK_TITLE: 'QA環境デプロイ開始予告'
-          SLACK_MESSAGE: '@xuan-qa_lead_inprocess QA環境にデプロイをするため、QA環境がしばらく使えなくなります'
+          SLACK_MESSAGE: 'QAのリリースを開始します'
           SLACK_ICON: https://emoji.slack-edge.com/T03RE03HC/kaipochi%25E6%25BA%2580%25E8%25B6%25B3/29ada9c6ddf89230.png
           SLACK_WEBHOOK: ${{ vars.SLACK_DEPLOY_QA_CHANNEL_WEBHOOK_URL }}
 

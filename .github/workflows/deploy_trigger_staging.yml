@@ -51,7 +51,7 @@ jobs:
         uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 # v2.3.3
         env:
           SLACK_TITLE: 'Staging環境デプロイ開始予告'
-          SLACK_MESSAGE: '@here Staging リリースを開始します\nリースノートおよび手順: https://sms-kaipoke.esa.io/#path=%2Fxuan-project%2F%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E6%89%8B%E9%A0%86%E6%9B%B8'
+          SLACK_MESSAGE: 'Stagingのリリースを開始します'
           SLACK_ICON: https://emoji.slack-edge.com/T03RE03HC/kaipochi%25E6%25BA%2580%25E8%25B6%25B3/29ada9c6ddf89230.png
           SLACK_WEBHOOK: ${{ vars.SLACK_DEPLOY_STG_CHANNEL_WEBHOOK_URL }}
 
