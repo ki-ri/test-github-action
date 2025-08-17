@@ -54,7 +54,7 @@ jobs:
           SLACK_TITLE: 'production環境デプロイ開始予告'
           SLACK_MESSAGE: 'Productionのリリースを開始します'
           SLACK_ICON: https://emoji.slack-edge.com/T03RE03HC/kaipochi%25E6%25BA%2580%25E8%25B6%25B3/29ada9c6ddf89230.png
-          SLACK_WEBHOOK: ${{ vars.SLACK_DEPLOY_PROD_CHANNEL_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ vars.SLACK_DEPLOY_CHANNEL_WEBHOOK_URL }}
 
   production-deployment:
     runs-on: ubuntu-latest
