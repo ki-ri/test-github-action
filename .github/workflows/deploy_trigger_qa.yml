@@ -1,0 +1,71 @@
+
+name: "Deploy Trigger - QA"
+
+on:
+  schedule:
+    # 14:00 JST on 2nd and 4th Thursday of every month (5:00 UTC)
+    - cron: '0 5 * * 4'
+
+jobs:
+  check-schedule:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if it's 2nd or 4th Thursday
+        id: check
+        run: |
+          # Get current date in JST
+          current_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          current_day=$(TZ=Asia/Tokyo date +%d)
+          current_dow=$(TZ=Asia/Tokyo date +%u)  # 1=Monday, 4=Thursday
+          
+          # Check if today is Thursday
+          if [ "$current_dow" != "4" ]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Calculate which Thursday of the month this is
+          first_day_of_month=$(TZ=Asia/Tokyo date -d "${current_date%%-*}-${current_date#*-}" +%u)
+          days_to_first_thursday=$((4 - first_day_of_month))
+          if [ $days_to_first_thursday -lt 0 ]; then
+            days_to_first_thursday=$((days_to_first_thursday + 7))
+          fi
+          first_thursday=$((1 + days_to_first_thursday))
+          
+          thursday_number=$(((current_day - first_thursday) / 7 + 1))
+          
+          # Check if it's 2nd or 4th Thursday
+          if [ "$thursday_number" = "2" ] || [ "$thursday_number" = "4" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  notify-deployment-start:
+    runs-on: ubuntu-latest
+    needs: check-schedule
+    if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
+    steps:
+      - name: Notify QA deployment start
+        uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 # v2.3.3
+        env:
+          SLACK_TITLE: 'QA環境デプロイ開始予告'
+          SLACK_MESSAGE: '@xuan-qa_lead_inprocess QA環境にデプロイをするため、QA環境がしばらく使えなくなります'
+          SLACK_ICON: https://emoji.slack-edge.com/T03RE03HC/kaipochi%25E6%25BA%2580%25E8%25B6%25B3/29ada9c6ddf89230.png
+          SLACK_WEBHOOK: ${{ vars.SLACK_DEPLOY_QA_CHANNEL_WEBHOOK_URL }}
+
+  qa-deployment:
+    runs-on: ubuntu-latest
+    environment: qa
+    needs: [notify-deployment-start, check-schedule]
+    if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
+    steps:
+      - name: Deploy to qa
+        uses: ./.github/actions/deploy_trigger.yml
+        with:
+          environment: qa
+          run_db_migration_hcs: 'true'
+          run_db_migration_platform: 'true'
+          run_db_migration_billing: 'true'
