@@ -5,8 +5,8 @@ on:
   schedule:
     # 14:00 JST on 2nd and 4th Thursday of every month (5:00 UTC)
     # - cron: '0 5 * * 4'
-    # 14:30 JST on 2025-08-17 (5:30 UTC)
-    - cron: '30 5 17 8 *'
+    # 15:00 JST on 2025-08-17 (6:00 UTC)
+    - cron: '0 6 17 8 *'
 
 jobs:
   check-schedule:
