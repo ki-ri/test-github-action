@@ -63,10 +63,10 @@ jobs:
     if: ${{ needs.check-schedule.outputs.should_run == 'true' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
       - name: Deploy to production
-        uses: ./.github/actions/deploy_trigger.yml
+        uses: ./.github/actions/deploy_trigger
         with:
           environment: production
           run_db_migration_hcs: 'true'
