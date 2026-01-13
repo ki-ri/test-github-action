@@ -1,0 +1,6 @@
+BEGIN;
+UPDATE office.kaigo_office_number ko
+SET number = '1234567890'
+WHERE ko.kaigo_office_number_id IN ('01K6WK0VA89BRF2W8M1CM3VYYY','01K6WK0VA99M6B6E444F4N8MXZ');
+
+COMMIT;
