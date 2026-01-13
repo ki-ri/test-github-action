@@ -63,7 +63,7 @@ jobs:
           echo "変更後の事業所番号: ${{ inputs.target_kaigo_office_number }}"
           echo "適用予定日: ${{ inputs.apply_date }}"
       - name: Create Pull Request
-        uses: ./.github/actions/hcs/auto_create_pr_for_updating_kaigo_office_number
+        uses: ./.github/actions/auto_create_pr_for_updating_kaigo_office_number
         with:
           kaigo_office_number_ids: ${{ steps.fetch-data.outputs.kaigo_office_number_ids }}
           current_kaigo_office_number: ${{ inputs.current_kaigo_office_number }}
