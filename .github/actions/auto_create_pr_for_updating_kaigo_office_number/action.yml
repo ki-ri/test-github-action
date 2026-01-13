@@ -63,28 +63,34 @@ runs:
 
         # Generate UP migration file
         UP_FILE="${MIGRATIONS_DIR}/${TIMESTAMP}_update_kaigo_office_number.up.sql"
-        cat > "$UP_FILE" << EOF
-BEGIN;
-UPDATE office.kaigo_office_number ko
-SET number = '$TARGET_NUMBER'
-WHERE ko.kaigo_office_number_id IN ($SQL_IDS);
+        cat > "$UP_FILE" <<EOF
+        BEGIN;
+        UPDATE office.kaigo_office_number ko
+        SET number = '$TARGET_NUMBER'
+        WHERE ko.kaigo_office_number_id IN ($SQL_IDS);
 
-COMMIT;
-EOF
+        COMMIT;
+        EOF
+
+        # Remove leading whitespace from SQL file
+        sed -i 's/^        //' "$UP_FILE"
 
         echo "✅ Created UP migration file: $UP_FILE"
         cat "$UP_FILE"
 
         # Generate DOWN migration file
         DOWN_FILE="${MIGRATIONS_DIR}/${TIMESTAMP}_update_kaigo_office_number.down.sql"
-        cat > "$DOWN_FILE" << EOF
-BEGIN;
-UPDATE office.kaigo_office_number ko
-SET number = '$CURRENT_NUMBER'
-WHERE ko.kaigo_office_number_id IN ($SQL_IDS);
+        cat > "$DOWN_FILE" <<EOF
+        BEGIN;
+        UPDATE office.kaigo_office_number ko
+        SET number = '$CURRENT_NUMBER'
+        WHERE ko.kaigo_office_number_id IN ($SQL_IDS);
 
-COMMIT;
-EOF
+        COMMIT;
+        EOF
+
+        # Remove leading whitespace from SQL file
+        sed -i 's/^        //' "$DOWN_FILE"
 
         echo "✅ Created DOWN migration file: $DOWN_FILE"
         cat "$DOWN_FILE"
