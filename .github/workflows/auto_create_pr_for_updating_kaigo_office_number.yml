@@ -34,8 +34,8 @@ jobs:
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: bm-sms
-          repositories: xuan
+          owner: ki-ri
+          repositories: test-github-action
       # TODO: 動作確認後に以下のコメントアウトを解除し、モックデータステップを削除すること
       # - name: Fetch data from BigQuery
       #   id: fetch-data
