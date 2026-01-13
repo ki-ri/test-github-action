@@ -1,0 +1,73 @@
+name: Auto Create PR for Updating Kaigo Office Number
+
+on:
+  workflow_dispatch:
+    inputs:
+      houjin_id:
+        description: 'テナントID (法人ID)'
+        required: true
+        type: string
+      current_kaigo_office_number:
+        description: '現在の事業所番号'
+        required: true
+        type: string
+      target_kaigo_office_number:
+        description: '変更後の事業所番号'
+        required: true
+        type: string
+      apply_date:
+        description: '適用予定日 (YYYY-MM-DD形式)'
+        required: true
+        type: string
+
+jobs:
+  fetch-bigquery-data-and-create-pr:
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        id: app-token
+        with:
+          app-id: ${{ vars.XUAN_GITHUB_ACTIONS_GITHUB_APP_ID }}
+          private-key: ${{ secrets.XUAN_GITHUB_ACTION_APP_PRIVATE_KEY }}
+          owner: bm-sms
+          repositories: xuan
+      # TODO: 動作確認後に以下のコメントアウトを解除し、モックデータステップを削除すること
+      # - name: Fetch data from BigQuery
+      #   id: fetch-data
+      #   uses: ./.github/actions/hcs/fetch-prd-sanitized-data-from-bigquery
+      #   with:
+      #     houjin_id: ${{ inputs.houjin_id }}
+      #     current_kaigo_office_number: ${{ inputs.current_kaigo_office_number }}
+      #     target_kaigo_office_number: ${{ inputs.target_kaigo_office_number }}
+      #     apply_date: ${{ inputs.apply_date }}
+
+      # TEMPORARY: BigQueryアクセス権限がないため、一時的にモックデータを生成（動作確認後に削除すること）
+      - name: Generate Mock Data (TEMPORARY)
+        id: fetch-data
+        run: |
+          echo "⚠️  WARNING: Using mock data for testing"
+          echo "corporation_id=01K8J7VJ2PE016DHTCBJN7VNZ6" >> $GITHUB_OUTPUT
+          echo "kaigo_office_number_ids=01K6WK0VA89BRF2W8M1CM3VYYY, 01K6WK0VA99M6B6E444F4N8MXZ" >> $GITHUB_OUTPUT
+      - name: Display results
+        run: |
+          echo "=== 取得結果 ==="
+          echo "法人ID (houjin_id): ${{ inputs.houjin_id }}"
+          echo "Corporation ID: ${{ steps.fetch-data.outputs.corporation_id }}"
+          echo "介護事業所番号 (kaigo_office_number_ids): ${{ steps.fetch-data.outputs.kaigo_office_number_ids }}"
+          echo "現在の事業所番号: ${{ inputs.current_kaigo_office_number }}"
+          echo "変更後の事業所番号: ${{ inputs.target_kaigo_office_number }}"
+          echo "適用予定日: ${{ inputs.apply_date }}"
+      - name: Create Pull Request
+        uses: ./.github/actions/hcs/auto_create_pr_for_updating_kaigo_office_number
+        with:
+          kaigo_office_number_ids: ${{ steps.fetch-data.outputs.kaigo_office_number_ids }}
+          current_kaigo_office_number: ${{ inputs.current_kaigo_office_number }}
+          target_kaigo_office_number: ${{ inputs.target_kaigo_office_number }}
+          apply_date: ${{ inputs.apply_date }}
+          houjin_id: ${{ inputs.houjin_id }}
+          github_token: ${{ steps.app-token.outputs.token }}
