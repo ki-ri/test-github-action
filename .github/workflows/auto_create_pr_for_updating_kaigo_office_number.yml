@@ -39,7 +39,7 @@ jobs:
       # TODO: 動作確認後に以下のコメントアウトを解除し、モックデータステップを削除すること
       # - name: Fetch data from BigQuery
       #   id: fetch-data
-      #   uses: ./.github/actions/hcs/fetch-prd-sanitized-data-from-bigquery
+      #   uses: ./.github/actions/fetch-prd-sanitized-data-from-bigquery
       #   with:
       #     houjin_id: ${{ inputs.houjin_id }}
       #     current_kaigo_office_number: ${{ inputs.current_kaigo_office_number }}
