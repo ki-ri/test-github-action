@@ -126,6 +126,7 @@ runs:
         base: main
         branch: hcs/update-kaigo-office-number-${{ inputs.houjin_id }}-${{ steps.generate-sql.outputs.timestamp }}
         delete-branch: true
+        draft: true
 
     - name: Display PR Creation Summary
       shell: bash
