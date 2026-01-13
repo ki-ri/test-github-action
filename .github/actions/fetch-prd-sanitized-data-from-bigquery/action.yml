@@ -1,0 +1,144 @@
+name: Fetch Production Sanitized Data from BigQuery
+description: 'BigQueryから本番環境のサニタイズされたデータを取得する'
+
+inputs:
+  houjin_id:
+    description: 'テナントID (法人ID)'
+    required: true
+  current_kaigo_office_number:
+    description: '現在の事業所番号'
+    required: true
+  target_kaigo_office_number:
+    description: '変更後の事業所番号'
+    required: true
+  apply_date:
+    description: '適用予定日 (YYYY-MM-DD形式)'
+    required: true
+
+outputs:
+  corporation_id:
+    description: 'BigQueryから取得したCorporation ID'
+    value: ${{ steps.fetch-corporation-id.outputs.corporation_id }}
+  kaigo_office_number_ids:
+    description: 'BigQueryから取得した介護事業所番号IDのリスト'
+    value: ${{ steps.fetch-kaigo-office-numbers.outputs.kaigo_office_number_ids }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Input Parameters
+      shell: bash
+      env:
+        HOUJIN_ID: ${{ inputs.houjin_id }}
+        CURRENT_KAIGO_OFFICE_NUMBER: ${{ inputs.current_kaigo_office_number }}
+        TARGET_KAIGO_OFFICE_NUMBER: ${{ inputs.target_kaigo_office_number }}
+        APPLY_DATE: ${{ inputs.apply_date }}
+      run: |
+        echo "🔍 Validating input parameters..."
+        echo "法人ID (houjin_id): $HOUJIN_ID"
+        echo "現在の事業所番号: $CURRENT_KAIGO_OFFICE_NUMBER"
+        echo "変更後の事業所番号: $TARGET_KAIGO_OFFICE_NUMBER"
+        echo "適用予定日: $APPLY_DATE"
+
+        # Validate date format (YYYY-MM-DD)
+        if [[ ! "$APPLY_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+          echo "❌ Error: Invalid date format. Expected YYYY-MM-DD, got: $APPLY_DATE"
+          exit 1
+        fi
+        echo "✅ Input validation passed"
+
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      with:
+        # NOTE: 以下のworkload_identity_providerとservice_accountは、
+        # BigQueryへのアクセス権限を持つ適切な値に置き換える必要があります
+        workload_identity_provider: projects/735470117555/locations/global/workloadIdentityPools/gh-actions-pool-xuan/providers/gh-actions-oidc-provider-xuan
+        service_account: xuan-bigquery-access@prj-prd-xuan-internal.iam.gserviceaccount.com
+        project_id: 'sms-xuan-dp-sanitized-prod'
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db
+      with:
+        project_id: 'sms-xuan-dp-sanitized-prod'
+
+    - name: Fetch Corporation ID from BigQuery
+      id: fetch-corporation-id
+      shell: bash
+      env:
+        HOUJIN_ID: ${{ inputs.houjin_id }}
+      run: |
+        echo "📊 Fetching corporation_id from BigQuery..."
+        echo "Query: SELECT id FROM \`sms-xuan-dp-sanitized-prod.platform__contract.corporations\` WHERE houjin_id = '$HOUJIN_ID'"
+
+        # Execute BigQuery query
+        QUERY="SELECT id FROM \`sms-xuan-dp-sanitized-prod.platform__contract.corporations\` WHERE houjin_id = '$HOUJIN_ID'"
+
+        RESULT=$(bq query --use_legacy_sql=false --format=json "$QUERY")
+
+        # Parse the result to extract corporation_id
+        CORPORATION_ID=$(echo "$RESULT" | jq -r '.[0].id // empty')
+
+        if [ -z "$CORPORATION_ID" ]; then
+          echo "❌ Error: No corporation found for houjin_id: $HOUJIN_ID"
+          exit 1
+        fi
+
+        echo "✅ Corporation ID found: $CORPORATION_ID"
+        echo "corporation_id=$CORPORATION_ID" >> $GITHUB_OUTPUT
+
+    - name: Fetch Kaigo Office Number IDs from BigQuery
+      id: fetch-kaigo-office-numbers
+      shell: bash
+      env:
+        CORPORATION_ID: ${{ steps.fetch-corporation-id.outputs.corporation_id }}
+      run: |
+        echo "📊 Fetching kaigo_office_number_ids from BigQuery..."
+        echo "Corporation ID: $CORPORATION_ID"
+
+        # Execute BigQuery query
+        QUERY="SELECT n.kaigo_office_number_id
+               FROM \`sms-xuan-dp-sanitized-prod.office.base\` b
+               INNER JOIN \`sms-xuan-dp-sanitized-prod.office.office\` o ON o.base_id = b.base_id
+               INNER JOIN \`sms-xuan-dp-sanitized-prod.office.kaigo_office_number\` n ON n.office_id = o.office_id
+               WHERE b.corporation_id = '$CORPORATION_ID'"
+
+        echo "Query: $QUERY"
+
+        RESULT=$(bq query --use_legacy_sql=false --format=json "$QUERY")
+
+        # Parse the result to extract kaigo_office_number_ids
+        KAIGO_OFFICE_NUMBER_IDS=$(echo "$RESULT" | jq -r '[.[].kaigo_office_number_id] | join(", ")')
+
+        if [ -z "$KAIGO_OFFICE_NUMBER_IDS" ]; then
+          echo "⚠️  Warning: No kaigo_office_number_id found for corporation_id: $CORPORATION_ID"
+          KAIGO_OFFICE_NUMBER_IDS="(none)"
+        fi
+
+        echo "✅ Kaigo Office Number IDs found:"
+        echo "$RESULT" | jq -r '.[] | "  - \(.kaigo_office_number_id)"'
+
+        echo "kaigo_office_number_ids=$KAIGO_OFFICE_NUMBER_IDS" >> $GITHUB_OUTPUT
+
+    - name: Display Summary
+      shell: bash
+      env:
+        HOUJIN_ID: ${{ inputs.houjin_id }}
+        CORPORATION_ID: ${{ steps.fetch-corporation-id.outputs.corporation_id }}
+        KAIGO_OFFICE_NUMBER_IDS: ${{ steps.fetch-kaigo-office-numbers.outputs.kaigo_office_number_ids }}
+        CURRENT_KAIGO_OFFICE_NUMBER: ${{ inputs.current_kaigo_office_number }}
+        TARGET_KAIGO_OFFICE_NUMBER: ${{ inputs.target_kaigo_office_number }}
+        APPLY_DATE: ${{ inputs.apply_date }}
+      run: |
+        echo ""
+        echo "================================================"
+        echo "📋 BigQuery データ取得結果"
+        echo "================================================"
+        echo "法人ID (houjin_id): $HOUJIN_ID"
+        echo "Corporation ID: $CORPORATION_ID"
+        echo "介護事業所番号IDs: $KAIGO_OFFICE_NUMBER_IDS"
+        echo ""
+        echo "現在の事業所番号: $CURRENT_KAIGO_OFFICE_NUMBER"
+        echo "変更後の事業所番号: $TARGET_KAIGO_OFFICE_NUMBER"
+        echo "適用予定日: $APPLY_DATE"
+        echo "================================================"
