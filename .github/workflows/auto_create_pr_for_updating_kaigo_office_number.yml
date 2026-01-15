@@ -19,6 +19,10 @@ on:
         description: '適用予定日 (YYYY-MM-DD形式)'
         required: true
         type: string
+      jira_link:
+        description: 'JIRAリンク (例: https://bm-sms.atlassian.net/browse/XCAREAPP-1234)'
+        required: true
+        type: string
 
 jobs:
   fetch-bigquery-data-and-create-pr:
